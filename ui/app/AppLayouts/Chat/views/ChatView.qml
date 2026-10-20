@@ -863,6 +863,7 @@ Item {
         ChatColumnView {
             parentModule: root.rootStore.chatCommunitySectionModule
             rootStore: root.rootStore
+            threadName: root.activeItemName
 
             messagesViewEnabled: centerPanelLoader.status === Loader.Ready
 
