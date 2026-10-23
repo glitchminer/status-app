@@ -80,7 +80,7 @@ Button {
         }
 
         function beautifyIsoCodes(codes) {
-            return codes.map(code => beautifyIsoCode(code)).join(",")
+            return codes.map(code => beautifyIsoCode(code)).join(", ")
         }
     }
 
