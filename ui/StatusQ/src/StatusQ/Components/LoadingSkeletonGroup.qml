@@ -5,11 +5,13 @@ import QtQuick
    \inherits Item
    \inqmlmodule StatusQ.Components
    \since StatusQ.Components 0.1
-   \brief Renders an arbitrary arrangement of LoadingSkeletonTile shapes with a
-   single continuous shimmer sweep across the whole group.
+   \brief Marks the area a shimmer sweep runs across for the LoadingSkeletonTile
+   shapes inside it.
 
-   Use this for creation-time skeleton screens instead of many LoadingComponent
-   instances, so that the shimmer runs across the arrangement as one band.
+   It draws nothing itself: each tile finds its nearest LoadingSkeletonGroup
+   ancestor and sweeps across the group's rectangle, so the shimmer runs over
+   the whole arrangement as one band. Use this for creation-time skeleton
+   screens instead of many LoadingComponent instances.
 
    Example:
 
@@ -30,8 +32,4 @@ import QtQuick
     }
    \endqml
 */
-Item {
-    id: root
-
-    default property alias contentData: root.data
-}
+Item {}
