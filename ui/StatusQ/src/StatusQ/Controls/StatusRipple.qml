@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 
 import StatusQ.Core.Theme
 
@@ -91,7 +90,7 @@ Item {
         }
         d.pressed = true
         d.rippleRadius = 0
-        ripple.opacity = maxOpacity
+        d.opacity = maxOpacity
         collapseAnimation.stop()
         expandAnimation.restart()
     }
@@ -130,33 +129,36 @@ Item {
         property real pressY: root.height / 2
         property real rippleRadius: 0
         property bool pressed: false
+        property real opacity: 0
     }
 
-    visible: ripple.opacity > 0
-    layer.enabled: visible
-    layer.effect: MultiEffect {
-        maskEnabled: true
-        maskThresholdMin: 0.5
-        maskSpreadAtMin: 1.0
-        maskSource: Rectangle {
-            parent: root
-            layer.enabled: true
-            visible: false
-            width: root.width
-            height: root.height
-            radius: root.radius
+    visible: d.opacity > 0
+
+    // The circle, clipped to the rounded bounds, in one shader pass: no
+    // offscreen layer and no mask texture. Built only while the ripple
+    // shows, as controls create their ripple whether pressed or not.
+    Loader {
+        anchors.fill: parent
+        active: root.visible
+        sourceComponent: rippleComponent
+    }
+
+    Component {
+        id: rippleComponent
+
+        ShaderEffect {
+            opacity: d.opacity
+
+            property size itemSize: Qt.size(width, height)
+            property real radius: Math.max(0, Math.min(root.radius, width / 2, height / 2))
+            property point centre: Qt.point(root.pressX, root.pressY)
+            property real rippleRadius: root.rippleRadius
+            property color color: root.color
+            property real edgeWidth: 1 / (root.Window.window ? root.Window.window.devicePixelRatio
+                                                             : Screen.devicePixelRatio)
+
+            fragmentShader: "qrc:/StatusQ/shaders/ripple.frag.qsb"
         }
-    }
-
-    Rectangle {
-        id: ripple
-        x: root.pressX - root.rippleRadius
-        y: root.pressY - root.rippleRadius
-        width: root.rippleRadius * 2
-        height: width
-        radius: width / 2
-        color: root.color
-        opacity: 0
     }
 
     NumberAnimation {
@@ -183,7 +185,7 @@ Item {
 
         onStopped: {
             if (!root.pressed && root.rippleRadius === 0)
-                ripple.opacity = 0
+                d.opacity = 0
         }
     }
 }
