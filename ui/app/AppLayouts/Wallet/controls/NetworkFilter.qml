@@ -3,7 +3,6 @@ import QtQml
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import QtQuick.Effects
 
 import StatusQ
 import StatusQ.Core
@@ -121,30 +120,18 @@ StatusComboBox {
                     image.source: Assets.svg(model.iconUrl)
                     z: index + 1
 
+                    // Cut where the next network's icon overlaps: computed by
+                    // the shader on the image's layer, with no second layer
+                    // for a mask. The circle the inverted mask had: the icon's
+                    // size, shifted right by the overlap (scaled, as the 2 px
+                    // larger mask was stretched over the icon).
                     image.layer.enabled: index < chainRepeater.count - 1 && row.spacing < 0
-                    image.layer.effect: MultiEffect {
-                        maskEnabled: true
-                        maskThresholdMin: 0.5
-                        maskSpreadAtMin: 1.0
-                        id: mask
-                        maskInverted: true
+                    image.layer.effect: StatusRoundedCornersEffect {
+                        readonly property real shift: (delegateItem.width + row.spacing)
+                                                      * width / (width + 2)
 
-                        maskSource: Item {
-                            parent: root
-                            layer.enabled: true
-                            visible: false
-                            width: mask.width + 2
-                            height: mask.height + 2
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                anchors.horizontalCenterOffset: delegateItem.width + row.spacing
-
-                                width: parent.width
-                                height: width
-                                radius: width / 2
-                            }
-                        }
+                        cutoutCenter: Qt.point(width / 2 + shift, height / 2)
+                        cutoutRadius: width / 2
                     }
                 }
             }

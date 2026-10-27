@@ -3,7 +3,6 @@ import QtQuick.Layouts
 import QtQuick.Window
 import StatusQ.Core
 
-import QtQuick.Effects
 
 import StatusQ.Core.Theme
 import StatusQ.Components
@@ -77,30 +76,18 @@ CalloutCard {
                     image.source: root.logoUri || Constants.tokenIcon(root.symbol)
                     width: 44
                     height: width
+                    // Cut where the recipient's icon overlaps: computed by the
+                    // shader on the image's layer, with no second layer for a
+                    // mask. The circle the inverted mask had: the icon's size,
+                    // shifted right by the overlap (scaled, as the 2 px larger
+                    // mask was stretched over the icon).
                     image.layer.enabled: true
-                    image.layer.effect: MultiEffect {
-                        maskEnabled: true
-                        maskThresholdMin: 0.5
-                        maskSpreadAtMin: 1.0
-                        id: mask
-                        maskInverted: true
+                    image.layer.effect: StatusRoundedCornersEffect {
+                        readonly property real shift: (symbolImage.width + iconRow.spacing - 2)
+                                                      * width / (width + 2)
 
-                        maskSource: Item {
-                            parent: root
-                            layer.enabled: true
-                            visible: false
-                            width: mask.width + 2
-                            height: mask.height + 2
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                anchors.horizontalCenterOffset: symbolImage.width + iconRow.spacing - 2
-
-                                width: parent.width
-                                height: width
-                                radius: width / 2
-                            }
-                        }
+                        cutoutCenter: Qt.point(width / 2 + shift, height / 2)
+                        cutoutRadius: width / 2
                     }
                 }
 
