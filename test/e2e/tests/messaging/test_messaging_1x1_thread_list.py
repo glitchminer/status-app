@@ -76,7 +76,7 @@ def test_messaging_1x1_thread_list_row(multiple_instances):
             parent.open_context_menu().create_thread()
             assert thread_panel.is_open
             thread_panel.send_message(reply_message)
-            messages_screen.chat.find_message_by_text(reply_message, 0)
+            thread_panel.find_message(reply_message)
             thread_panel.close()
 
         with step('Thread row under contact opens thread in main panel'):

@@ -9,7 +9,7 @@ from gui.elements.button import Button
 from gui.elements.text_edit import TextEdit
 from gui.elements.text_label import TextLabel
 from gui.objects_map import messaging_names
-from helpers.chat_helper import chat_contains_message_text
+from helpers.chat_helper import chat_contains_message_text, plain_text_from_message_object
 
 
 def thread_title_from_parent_message(parent_text: str) -> str:
@@ -37,6 +37,25 @@ class ThreadPanel:
         field.set_text_property(message)
         send_button = Button(messaging_names.threadSendButton)
         send_button.wait_until_enabled().click()
+
+    @allure.step('Find message in the open thread panel')
+    def find_message(self, message_text: str):
+        from gui.screens.messages.message import Message
+
+        found = None
+
+        def message_found() -> bool:
+            nonlocal found
+            for item in driver.findAllObjects(messaging_names.threadMessageView):
+                if getattr(item, 'isMessage', True) and message_text in plain_text_from_message_object(item):
+                    found = Message(item)
+                    return True
+            return False
+
+        timeout_msec = configs.timeouts.MESSAGING_TIMEOUT_SEC * 1000
+        if not driver.waitFor(message_found, timeout_msec):
+            raise LookupError(f'Thread message not found within {timeout_msec} ms: {message_text!r}')
+        return found
 
     @allure.step('Close thread side panel')
     def close(self):

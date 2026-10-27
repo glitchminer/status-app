@@ -21,6 +21,7 @@ statusToolBar_StatusTagItem = {"container": mainWindow_statusToolBar_StatusToolB
 mainWindow_ChatColumnView = {"container": statusDesktop_mainWindow, "type": "ChatColumnView", "unnamed": 1, "visible": True}
 mainWindow_chatLogView_StatusListView = {"container": statusDesktop_mainWindow, "objectName": "chatLogView", "type": "WindowedView", "visible": True}
 chatLogView_chatMessageViewDelegate_MessageView = {"container": mainWindow_chatLogView_StatusListView, "objectName": "chatMessageViewDelegate", "type": "MessageView", "visible": True, "enabled": True}
+threadMessageView = {"objectName": "chatMessageViewDelegate", "type": "MessageView", "isThreadView": True, "visible": True, "enabled": True}
 
 # Create Chat View
 mainWindow_CreateChatView = {"container": statusDesktop_mainWindow, "type": "CreateChatView", "unnamed": 1, "visible": True}
