@@ -62,6 +62,7 @@
         <file>StatusQ/Components/StatusRoundedImage.qml</file>
         <file>StatusQ/Components/StatusRoundedMedia.qml</file>
         <file>StatusQ/Components/StatusScanCorners.qml</file>
+        <file>StatusQ/Components/StatusShaderRoundedImage.qml</file>
         <file>StatusQ/Components/StatusSmartIdenticon.qml</file>
         <file>StatusQ/Components/StatusSortableColumnHeader.qml</file>
         <file>StatusQ/Components/StatusStepper.qml</file>

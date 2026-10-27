@@ -402,6 +402,7 @@ qt_add_shaders(StatusQ "statusq_shaders"
     PREFIX "/StatusQ/shaders"
     BASE "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/shaders"
     FILES
+        src/assets/shaders/roundedimage.frag
         src/assets/shaders/skeletontile.frag
 )
 
