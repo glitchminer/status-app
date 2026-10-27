@@ -48,13 +48,14 @@ CalloutCard {
             Layout.preferredHeight: 170
             Layout.preferredWidth: 324
             active: !!d.bannerImageSource
-            sourceComponent: StatusImage {
+            // the callout's shape, as the card's background, cut by the
+            // shader drawing the image: no layer
+            sourceComponent: StatusShaderRoundedImage {
                 id: bannerImage
-                asynchronous: true
                 source: d.bannerImageSource
-                fillMode: Image.PreserveAspectCrop
-                layer.enabled: true
-                layer.effect: root.clippingEffect
+                radius: Theme.radius * 2
+                bottomLeftRadius: root.leftTail ? Theme.radius / 2 : Theme.radius * 2
+                bottomRightRadius: root.leftTail ? Theme.radius * 2 : Theme.radius / 2
             }
         }
         ColumnLayout {

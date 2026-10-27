@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Effects
 
+import StatusQ.Components
 import StatusQ.Core
 import StatusQ.Controls
 import StatusQ.Core.Theme
@@ -75,38 +75,15 @@ Control {
 
             color: d.hasImage ? Theme.palette.baseColor1 : root.avatarColor
 
-            Image {
+            // circular in one shader pass over the image's own texture
+            StatusShaderRoundedImage {
                 id: avatarImg
 
                 anchors.fill: parent
 
                 source: root.avatarImage
-
-                smooth: true
-                mipmap: true
-                layer.enabled: true
-
                 fillMode: Image.PreserveAspectCrop
-
-                layer.effect: MultiEffect {
-                    source: avatarImg
-
-                    maskEnabled: true
-                    maskSource: circleMask
-
-                    maskThresholdMin: 0.5
-                    maskSpreadAtMin: 1.0
-                }
-
-                // Mask geometry
-                Rectangle {
-                    id: circleMask
-
-                    anchors.fill: parent
-                    layer.enabled: true
-                    radius: width / 2
-                    visible: false
-                }
+                radius: width / 2
             }
 
             StatusBaseText {
