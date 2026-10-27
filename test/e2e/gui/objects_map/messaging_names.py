@@ -90,7 +90,9 @@ chatMessageViewDelegate_messageContextMenuEditMenuItem = {"container": messageCo
 chatMessageViewDelegate_messageContextMenuDeleteButton = {"container": messageContextView, "objectName": "messageContextMenu_delete", "type": "StatusMenuItem", "visible": True}
 chatMessageViewDelegate_messageContextMenuReplyButton = {"container": messageContextView, "objectName": "messageContextMenu_replyTo", "type": "StatusFlatRoundButton", "visible": True}
 chatMessageViewDelegate_messageContextMenuReplyMenuItem = {"container": messageContextView, "objectName": "messageContextMenu_replyTo", "type": "StatusMenuItem", "visible": True}
+chatMessageViewDelegate_messageContextMenuOpenThreadMenuItem = {"container": messageContextView, "objectName": "messageContextMenu_openThread", "type": "StatusMenuItem", "visible": True}
 mainWindow_replyPanel_StatusChatInputReplyPanel = {"container": statusDesktop_mainWindow, "objectName": "statusChatInputReplyArea", "type": "StatusChatInputReplyPanel", "visible": True}
+closeThreadPanelButton = {"container": statusDesktop_mainWindow, "objectName": "closeThreadPanelButton", "type": "StatusFlatRoundButton", "visible": True}
 layout_recentMessagesButton_AnchorButton = {"checkable": False, "container": mainWindow_ChatMessagesView, "id": "recentMessagesButton", "type": "AnchorButton", "unnamed": 1, "visible": True}
 
 # Message link preview

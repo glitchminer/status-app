@@ -36,6 +36,11 @@ class LeftPanel(QObject):
                 chats_list.append(name)
         return chats_list
 
+    @allure.step('Get notifications count for chat list item')
+    def notifications_count(self, chat_name: str) -> int:
+        from helpers.thread_helper import messages_list_notifications_count
+        return messages_list_notifications_count(self._chat_list_item.real_name, chat_name)
+
     @allure.step('Click chat item')
     def click_chat_by_name(self, chat_name: str, attempts: int = 4):
         self._chat_list_item.real_name['objectName'] = chat_name

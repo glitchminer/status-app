@@ -692,6 +692,8 @@ class MessageQuickActions(QObject):
         self._delete_button = Button(messaging_names.chatMessageViewDelegate_messageContextMenuDeleteButton)
         self._reply_button = Button(messaging_names.chatMessageViewDelegate_messageContextMenuReplyButton)
         self._reply_menu_item = Button(messaging_names.chatMessageViewDelegate_messageContextMenuReplyMenuItem)
+        self._open_thread_menu_item = Button(
+            messaging_names.chatMessageViewDelegate_messageContextMenuOpenThreadMenuItem)
         self._reply_panel = QObject(messaging_names.mainWindow_replyPanel_StatusChatInputReplyPanel)
         self._edit_message_input = QObject(messaging_names.mainWindow_statusChatInput_StatusChatInput)
         self._edit_message_field = TextEdit(messaging_names.inputScrollView_messageInputField_TextArea)
@@ -775,6 +777,24 @@ class MessageQuickActions(QObject):
         self.expand()
         self._delete_button.click()
         ConfirmationMessagePopup().wait_until_appears().delete_button.click()
+
+    @allure.step('Create thread from message')
+    def create_thread(self):
+        self._open_context_menu()
+        self._expand_collapsed_menu()
+        self._open_thread_menu_item.wait_until_appears().click()
+
+    @allure.step('Pin action is visible in message context menu')
+    def is_pin_action_visible(self) -> bool:
+        try:
+            self.expand()
+        except (LookupError, TimeoutError):
+            self._dismiss_context_menu()
+            return False
+        try:
+            return self._pin_button.is_visible
+        finally:
+            self._dismiss_context_menu()
 
     @allure.step('Reply to own message')
     def reply_own_message(self, text: str):

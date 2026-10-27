@@ -345,7 +345,12 @@ class CommunityLeftPanel(QObject):
     def is_add_channels_button_visible(self) -> bool:
         return self._add_channels_button.is_visible
 
-    @allure.step('Select channel')
+    @allure.step('Get notifications count for channel or thread list item')
+    def notifications_count(self, name: str) -> int:
+        from helpers.thread_helper import list_item_notifications_count
+        return list_item_notifications_count(self.chatListItemDropAreaItem.real_name, name)
+
+    @allure.step('Select channel or thread in community list')
     def select_channel(self, name: str):
         deadline = time.monotonic() + max(15.0, configs.timeouts.UI_LOAD_TIMEOUT_SEC * 3)
         scroll_obj = self._channels_scroll.object
