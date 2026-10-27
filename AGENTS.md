@@ -1,6 +1,6 @@
 # AGENTS.md — status-app
 
-Instructions for AI coding agents working in this repository. Any tool that reads `AGENTS.md`, `CLAUDE.md` or `.github/copilot-instructions.md` lands here. Nested `AGENTS.md` files (for example `test/e2e_appium/AGENTS.md`) override this one for their directory.
+Instructions for AI coding agents working in this repository. `CLAUDE.md` imports this file and `.github/copilot-instructions.md` points to it, so every tool reads the same rules. Nested `AGENTS.md` files (for example `test/e2e_appium/AGENTS.md`) override this one for their directory.
 
 ## What this repo is
 
