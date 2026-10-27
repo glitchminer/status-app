@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Window
-import QtQuick.Effects
 
+import StatusQ.Components
 import StatusQ.Core
 import StatusQ.Core.Theme
 
@@ -18,9 +18,9 @@ Item {
     property bool playing: Window.window.active
 
     property bool isAnimated: !!source && source.toString().endsWith('.gif')
-    // Only the needed kind is built: stills decode at a bounded size (a chat
-    // can hold dozens of photos and a full decode of each exhausts memory);
-    // gifs need AnimatedImage, which cannot bound its decode.
+    // The rounded image (StatusShaderRoundedImage). Stills decode at a
+    // bounded size (a chat can hold dozens of photos and a full decode of
+    // each exhausts memory).
     readonly property Item imageAlias: imageLoader.item
     property bool allCornersRounded: false
     property bool isOnline: true // TODO: mark as required when migrating to 5.15 or above
@@ -80,49 +80,10 @@ Item {
         width: root.imageAlias ? root.imageAlias.width : 0
         height: root.imageAlias ? root.imageAlias.paintedHeight : 0
 
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            maskEnabled: true
-            maskThresholdMin: 0.5
-            maskSpreadAtMin: 1.0
-            maskSource: Item {
-                parent: root
-                layer.enabled: true
-                visible: false
-                width: imageBox.width
-                height: imageBox.height
-
-                Rectangle {
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    width: imageBox.width
-                    height: imageBox.height
-                    radius: 16
-                }
-
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    width: 32
-                    height: 32
-                    radius: 4
-                    visible: root.leftTail && !allCornersRounded
-                }
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                    width: 32
-                    height: 32
-                    radius: 4
-                    visible: !root.leftTail && !allCornersRounded
-                }
-            }
-        }
-
         Loader {
             id: imageLoader
             asynchronous: root.asynchronous
-            sourceComponent: root.isAnimated ? animatedComponent : stillComponent
+            sourceComponent: roundedImageComponent
         }
 
         StatusMouseArea {
@@ -133,44 +94,34 @@ Item {
         }
     }
 
+    // Rounded in one shader pass over the image's own texture; the bubble's
+    // tail is the small corner. Only the needed kind of image is built
+    // inside: gifs need AnimatedImage, which cannot bound its decode.
     Component {
-        id: stillComponent
+        id: roundedImageComponent
 
-        Image {
+        StatusShaderRoundedImage {
             id: imageMessage
-            width: Math.min(implicitWidth, root.imageWidth)
-            fillMode: Image.PreserveAspectFit
-            sourceSize.width: d.decodeWidth
-            asynchronous: root.asynchronous
-            mipmap: true
-            cache: root.cacheImage
-            source: root.source
 
-            onStatusChanged: d.scheduleRetry(status)
+            readonly property real decodedWidth: image ? image.implicitWidth : 0
+            readonly property real decodedHeight: image ? image.implicitHeight : 0
 
-            function reloadImage() {
-                imageMessage.source = ""
-                imageMessage.source = Qt.binding(() => root.source)
-            }
+            // fit by width: the box has the image's aspect ratio
+            width: Math.min(decodedWidth, root.imageWidth)
+            height: decodedWidth > 0 ? Math.round(width * decodedHeight / decodedWidth) : 0
 
-            Component.onDestruction: imageMessage.source = ""
-        }
-    }
+            radius: 16
+            bottomLeftRadius: root.leftTail && !root.allCornersRounded ? 4 : 16
+            bottomRightRadius: !root.leftTail && !root.allCornersRounded ? 4 : 16
 
-    Component {
-        id: animatedComponent
-
-        AnimatedImage {
-            id: imageMessage
-            width: Math.min(implicitWidth, root.imageWidth)
-            fillMode: Image.PreserveAspectFit
-            sourceSize.width: d.decodeWidth
-            sourceSize.height: d.decodeWidth
-            asynchronous: root.asynchronous
-            source: root.source
+            animated: root.isAnimated
             playing: root.playing
-            mipmap: true
+            fillMode: Image.PreserveAspectFit
+            sourceSize: root.isAnimated ? Qt.size(d.decodeWidth, d.decodeWidth)
+                                        : Qt.size(d.decodeWidth, 0)
+            asynchronous: root.asynchronous
             cache: root.cacheImage
+            source: root.source
 
             onStatusChanged: d.scheduleRetry(status)
 

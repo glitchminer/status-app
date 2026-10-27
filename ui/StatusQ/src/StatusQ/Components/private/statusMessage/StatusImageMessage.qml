@@ -1,6 +1,6 @@
 import QtQuick
-import QtQuick.Effects
 
+import StatusQ.Components
 import StatusQ.Core
 import StatusQ.Core.Theme
 
@@ -13,9 +13,9 @@ Item {
         RIGHT_ROUNDED = 2
     }
 
-    // Only the needed kind is built: stills decode at a bounded size (an
-    // album can hold dozens of photos and a full decode of each exhausts
-    // memory); gifs need AnimatedImage, which cannot bound its decode.
+    // The rounded image (StatusShaderRoundedImage), built asynchronously.
+    // Stills decode at a bounded size (an album can hold dozens of photos and
+    // a full decode of each exhausts memory).
     readonly property Item imageAlias: imageLoader.item
 
     property bool isAppWindowActive: false
@@ -60,12 +60,14 @@ Item {
         readonly property int decodeHeight: imageContainer.isFillCropMode ? decodeWidth : 0
         property bool pausePlaying: false
 
-        function boxHeight(image) {
+        // The box for a decoded image of implicit size iw x ih, shown at
+        // width w: square for crop, the image's aspect ratio for fit.
+        function boxHeight(w, iw, ih) {
             if (imageContainer.isFillCropMode)
-                return image.width // Fixed box for crop
-            if (image.implicitWidth > 0)
-                return Math.round(image.width * image.implicitHeight / image.implicitWidth) // Fit by width / Preserve aspect ratio
-            return image.implicitHeight // Before image is loaded
+                return w // Fixed box for crop
+            if (iw > 0)
+                return Math.round(w * ih / iw) // Fit by width / Preserve aspect ratio
+            return ih // Before image is loaded
         }
     }
 
@@ -75,48 +77,10 @@ Item {
         width: imageContainer.imageAlias ? imageContainer.imageAlias.width : 0
         height: imageContainer.imageAlias ? imageContainer.imageAlias.height : 0
 
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            maskEnabled: true
-            maskThresholdMin: 0.5
-            maskSpreadAtMin: 1.0
-            maskSource: Item {
-                parent: root
-                layer.enabled: true
-                visible: false
-                width: imageBox.width
-                height: imageBox.height
-
-                Rectangle {
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    width: imageBox.width
-                    height: imageBox.height
-                    radius: 16
-                }
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    width: 32
-                    height: 32
-                    radius: 4
-                    visible: shapeType === StatusImageMessage.ShapeType.LEFT_ROUNDED //!isLeftCorner && !allCornersRounded
-                }
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                    width: 32
-                    height: 32
-                    radius: 4
-                    visible: shapeType === StatusImageMessage.ShapeType.RIGHT_ROUNDED  //isLeftCorner && !allCornersRounded
-                }
-            }
-        }
-
         Loader {
             id: imageLoader
             asynchronous: true
-            sourceComponent: _internal.isAnimated ? animatedComponent : stillComponent
+            sourceComponent: roundedImageComponent
         }
 
         HoverHandler {
@@ -146,35 +110,30 @@ Item {
         }
     }
 
+    // Rounded in one shader pass over the image's own texture; the bubble's
+    // tail is the small corner. Only the needed kind of image is built
+    // inside: gifs need AnimatedImage, which cannot bound its decode.
     Component {
-        id: stillComponent
+        id: roundedImageComponent
 
-        Image {
+        StatusShaderRoundedImage {
             id: imageMessage
-            width: Math.min(implicitWidth, imageContainer.imageWidth)
-            height: _internal.boxHeight(imageMessage)
-            fillMode: imageContainer.isFillCropMode ? Image.PreserveAspectCrop : Image.PreserveAspectFit
-            sourceSize.width: _internal.decodeWidth
-            sourceSize.height: _internal.decodeHeight
-            asynchronous: true
-            source: imageContainer.source
-            cache: false
-        }
-    }
 
-    Component {
-        id: animatedComponent
+            readonly property real decodedWidth: image ? image.implicitWidth : 0
+            readonly property real decodedHeight: image ? image.implicitHeight : 0
 
-        AnimatedImage {
-            id: imageMessage
-            width: Math.min(implicitWidth, imageContainer.imageWidth)
-            height: _internal.boxHeight(imageMessage)
+            width: Math.min(decodedWidth, imageContainer.imageWidth)
+            height: _internal.boxHeight(width, decodedWidth, decodedHeight)
+
+            radius: 16
+            bottomLeftRadius: imageContainer.shapeType === StatusImageMessage.ShapeType.LEFT_ROUNDED ? 4 : 16
+            bottomRightRadius: imageContainer.shapeType === StatusImageMessage.ShapeType.RIGHT_ROUNDED ? 4 : 16
+
+            animated: _internal.isAnimated
+            playing: imageContainer.isAppWindowActive && !_internal.pausePlaying
             fillMode: imageContainer.isFillCropMode ? Image.PreserveAspectCrop : Image.PreserveAspectFit
-            sourceSize.width: _internal.decodeWidth
-            sourceSize.height: _internal.decodeHeight
-            asynchronous: true
+            sourceSize: Qt.size(_internal.decodeWidth, _internal.decodeHeight)
             source: imageContainer.source
-            playing: isAppWindowActive && !_internal.pausePlaying
             cache: false
         }
     }
