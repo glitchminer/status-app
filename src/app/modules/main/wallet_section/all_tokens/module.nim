@@ -188,6 +188,9 @@ proc fetchAllChainsTokenGroupsForKeys*(self: Module, mandatoryGroupKeys: seq[str
 method getTokenByKeyOrGroupKeyFromAllTokens*(self: Module, key: string): TokenItem =
   return self.controller.getTokenByKeyOrGroupKeyFromAllTokens(key)
 
+method getTokenLookupState*(self: Module, key: string): TokenLookupState =
+  return self.controller.getTokenLookupState(key)
+
 method ensurePricesForGroup*(self: Module, key: string) =
   self.controller.ensurePricesForGroup(key)
 
