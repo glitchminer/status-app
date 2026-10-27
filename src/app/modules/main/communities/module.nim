@@ -937,6 +937,7 @@ proc applyPermissionResponse*(self: Module, communityId: string, permissions: Ta
         tokenCriteriaItem.symbol,
         tokenCriteriaItem.name,
         tokenCriteriaItem.amount,
+        tokenCriteriaItem.decimals,
         tokenCriteriaItem.`type`,
         tokenCriteriaItem.ensPattern,
         criteriaResult.criteria[index],
