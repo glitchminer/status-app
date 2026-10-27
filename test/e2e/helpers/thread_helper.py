@@ -6,6 +6,7 @@ import allure
 import configs
 import driver
 from gui.elements.button import Button
+from gui.elements.text_edit import TextEdit
 from gui.elements.text_label import TextLabel
 from gui.objects_map import messaging_names
 from helpers.chat_helper import chat_contains_message_text
@@ -28,6 +29,15 @@ class ThreadPanel:
         except TimeoutError:
             return False
 
+    @allure.step('Send message in the open thread panel')
+    def send_message(self, message: str):
+        field = TextEdit(messaging_names.threadMessageInputField)
+        field.wait_until_appears()
+        field.click()
+        field.set_text_property(message)
+        send_button = Button(messaging_names.threadSendButton)
+        send_button.wait_until_enabled().click()
+
     @allure.step('Close thread side panel')
     def close(self):
         self._close_button.wait_until_appears().click()
@@ -37,9 +47,23 @@ class ThreadPanel:
         )
 
 
+def _header_label_text(locator: dict) -> str:
+    label = TextLabel(locator)
+    if not driver.object.exists(label.real_name):
+        return ''
+    return str(label.object.text)
+
+
 @allure.step('Active chat header title')
 def active_chat_header_title() -> str:
-    return TextLabel(messaging_names.statusChatInfoButton).text
+    for locator in (messaging_names.threadHeaderTitle, messaging_names.statusChatInfoButton):
+        try:
+            title = _header_label_text(locator)
+        except Exception:
+            continue
+        if title:
+            return title
+    return ''
 
 
 @allure.step('Wait until chat header shows {expected!r}')

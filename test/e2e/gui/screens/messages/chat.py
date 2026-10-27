@@ -765,12 +765,18 @@ class MessageQuickActions(QObject):
         self._unpin_button.wait_until_appears().click()
 
     @allure.step('Edit message and save changes')
-    def edit_message(self, text: str):
+    def edit_message(self, text: str, thread_panel: bool = False):
         self._open_context_menu()
         self._edit_action().wait_until_appears().click()
-        self._edit_message_input.wait_until_appears()
-        self._edit_message_field.set_text_property(text)
-        self._send_message_button.wait_until_enabled().click()
+        if thread_panel:
+            field = TextEdit(messaging_names.threadMessageInputField)
+            send_button = Button(messaging_names.threadSendButton)
+        else:
+            field = self._edit_message_field
+            send_button = self._send_message_button
+        field.wait_until_appears()
+        field.set_text_property(text)
+        send_button.wait_until_enabled().click()
 
     @allure.step('Delete message')
     def delete_message(self):

@@ -102,7 +102,7 @@ def test_community_thread_desktop_flow(multiple_instances):
             ), 'Thread card did not appear after Create Thread'
             parent.open_thread_from_card()
             assert thread_panel.is_open, 'Thread side panel did not open from the thread card'
-            messages_screen.group_chat.send_message_to_group_chat(reply_message)
+            thread_panel.send_message(reply_message)
             messages_screen.chat.find_message_by_text(reply_message, 0)
             thread_panel.close()
             wait_until_reply_not_in_main_chat(messages_screen.chat, reply_message)
@@ -117,7 +117,7 @@ def test_community_thread_desktop_flow(multiple_instances):
             parent.open_thread_from_card()
             assert thread_panel.is_open
             reply = messages_screen.chat.find_message_by_text(reply_message, 0)
-            reply.open_context_menu().edit_message(edited_reply)
+            reply.open_context_menu().edit_message(edited_reply, thread_panel=True)
             messages_screen.chat.find_message_by_text(edited_reply, 0)
             thread_panel.close()
             main_screen.minimize()

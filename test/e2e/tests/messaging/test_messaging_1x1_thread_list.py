@@ -75,7 +75,7 @@ def test_messaging_1x1_thread_list_row(multiple_instances):
             parent = messages_screen.chat.find_message_by_text(parent_message, 0)
             parent.open_context_menu().create_thread()
             assert thread_panel.is_open
-            messages_screen.group_chat.send_message_to_group_chat(reply_message)
+            thread_panel.send_message(reply_message)
             messages_screen.chat.find_message_by_text(reply_message, 0)
             thread_panel.close()
 
