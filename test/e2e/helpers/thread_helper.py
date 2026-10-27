@@ -22,7 +22,11 @@ class ThreadPanel:
     @property
     @allure.step('Thread side panel is open')
     def is_open(self) -> bool:
-        return self._close_button.exists
+        try:
+            self._close_button.wait_until_appears(configs.timeouts.UI_LOAD_TIMEOUT_MSEC)
+            return True
+        except TimeoutError:
+            return False
 
     @allure.step('Close thread side panel')
     def close(self):

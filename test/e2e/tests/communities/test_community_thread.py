@@ -90,14 +90,18 @@ def test_community_thread_desktop_flow(multiple_instances):
             main_screen.minimize()
 
         with step(f'{user_two.name} starts a thread and replies in the side panel'):
-            # Only a community admin can call wakuext_createThread.
             switch_to_aut(aut_two, main_screen)
             community_screen = main_screen.left_panel.open_community(community.name)
             community_screen.left_panel.select_channel(CHANNEL_NAME)
             messages_screen = MessagesScreen()
             parent = messages_screen.chat.find_message_by_text(parent_message, 0)
             parent.open_context_menu().create_thread()
-            assert thread_panel.is_open, 'Thread side panel did not open after Create Thread'
+            assert driver.waitFor(
+                lambda: parent.has_thread_card(),
+                configs.timeouts.UI_LOAD_TIMEOUT_MSEC,
+            ), 'Thread card did not appear after Create Thread'
+            parent.open_thread_from_card()
+            assert thread_panel.is_open, 'Thread side panel did not open from the thread card'
             messages_screen.group_chat.send_message_to_group_chat(reply_message)
             messages_screen.chat.find_message_by_text(reply_message, 0)
             thread_panel.close()
