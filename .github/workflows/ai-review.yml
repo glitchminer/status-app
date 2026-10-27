@@ -1,0 +1,48 @@
+# AI review (pilot) — runs Claude Code as a reviewer on the job's own GITHUB_TOKEN.
+# No GitHub App is involved: `github_token` below overrides the action's default
+# App/OIDC auth, so the run is bounded by the `permissions:` block and the token
+# dies with the job. Comments post as github-actions[bot].
+#
+# This variant is for PRs whose head branch lives in this repository (fork → fork
+# during the pilot). For the upstream repo, where PRs arrive from external forks,
+# use ai-review.upstream.yml instead.
+name: AI review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: >-
+            --model claude-sonnet-5-5
+            --max-turns 25
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh pr review:*),Read,Grep,Glob"
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+            Read AGENTS.md first and apply it. Then read the diff with `gh pr diff ${{ github.event.pull_request.number }}`.
+            Follow the checklist in .github/ai-review-prompt.md exactly.
+            Post one review with `gh pr review ${{ github.event.pull_request.number }} --comment --body "..."`
+            containing the summary, and inline comments only for findings you are confident are defects.
+            Do not approve or request changes. Do not modify files or push.
