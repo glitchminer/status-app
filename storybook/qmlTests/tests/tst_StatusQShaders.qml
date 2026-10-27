@@ -10,7 +10,7 @@ Item {
         name: "StatusQShaders"
 
         function test_shaderIsBuiltIntoStatusQ_data() {
-            return ["edgefade", "ripple", "roundedimage"]
+            return ["edgefade", "ripple", "roundedimage", "skeletonmask"]
                 .map(name => ({ tag: name, path: `:/StatusQ/shaders/${name}.frag.qsb` }))
         }
 

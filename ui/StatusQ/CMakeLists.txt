@@ -405,6 +405,7 @@ qt_add_shaders(StatusQ "statusq_shaders"
         src/assets/shaders/edgefade.frag
         src/assets/shaders/ripple.frag
         src/assets/shaders/roundedimage.frag
+        src/assets/shaders/skeletonmask.frag
         src/assets/shaders/skeletontile.frag
 )
 
