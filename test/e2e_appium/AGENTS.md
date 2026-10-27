@@ -1,15 +1,11 @@
 # AGENTS.md — test/e2e_appium
 
-## Cursor Cloud specific instructions
-
-### Scope
-
-This environment is configured for the **E2E Appium test framework** at `test/e2e_appium/`. The main Status Desktop/Mobile build toolchain (Nim, Qt, Go, CMake) is **not** in scope.
+Instructions for agents working on the mobile E2E Appium framework. Working here does not need the app build toolchain (Nim, Qt, Go, CMake); it needs Python 3.11 and either a cloud device provider or a local Appium server.
 
 ### Python environment
 
-- Python 3.11 is installed via the `deadsnakes` PPA (`python3.11`). The CI uses 3.11.9; the VM has 3.11.x.
-- A virtualenv lives at `test/e2e_appium/.venv` (created with `python3.11 -m venv`).
+- Python 3.11 (CI uses 3.11.9).
+- Use a virtualenv at `test/e2e_appium/.venv` (`python3.11 -m venv .venv && pip install -r requirements.txt`).
 - Always activate it before running anything: `source test/e2e_appium/.venv/bin/activate`
 - All commands below assume the venv is active.
 
@@ -32,7 +28,7 @@ python -m pytest -m smoke --env=local -v
 ```
 
 Device-dependent tests (onboarding, messaging, wallet, etc.) require either:
-- **BrowserStack** (default, `--env=browserstack`): `BROWSERSTACK_USERNAME` and `BROWSERSTACK_ACCESS_KEY` env vars are configured as secrets. Also needs `BROWSERSTACK_APP_ID` (e.g. `bs://...`) pointing to an uploaded APK.
+- **BrowserStack** (default, `--env=browserstack`): needs `BROWSERSTACK_USERNAME` and `BROWSERSTACK_ACCESS_KEY` in the environment. Also needs `BROWSERSTACK_APP_ID` (e.g. `bs://...`) pointing to an uploaded APK.
 - **LambdaTest** (`--env=lambdatest`, used in CI): `LT_USERNAME` / `LT_ACCESS_KEY` env vars.
 - **Local Appium server** (`--env=local`): Appium at `localhost:4723` with an Android emulator and a Status APK (`LOCAL_APP_PATH` env var).
 
@@ -44,15 +40,13 @@ python -m pytest -m onboarding --env=browserstack -v
 
 ### Linting
 
-The cursor rules require all Python code to pass `ruff check .` before committing. `ruff` is installed in the venv.
+All Python code must pass `ruff check .` before committing (`.cursor/rules/appium-framework-standards.mdc`); install it with `pip install ruff`; config is in `pyproject.toml`.
 
 ```bash
 cd test/e2e_appium
 ruff check .          # lint
 ruff check . --fix    # auto-fix import sorting and simple issues
 ```
-
-Note: the existing codebase has ~19 pre-existing ruff findings (unused imports/variables). These are in the existing code, not introduced by agents.
 
 ### Key gotchas
 
