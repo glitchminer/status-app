@@ -89,8 +89,9 @@ def test_community_thread_desktop_flow(multiple_instances):
             messages_screen.group_chat.send_message_to_group_chat(parent_message)
             main_screen.minimize()
 
-        with step(f'{user_one.name} starts a thread and replies in the side panel'):
-            switch_to_aut(aut_one, main_screen)
+        with step(f'{user_two.name} starts a thread and replies in the side panel'):
+            # Only a community admin can call wakuext_createThread.
+            switch_to_aut(aut_two, main_screen)
             community_screen = main_screen.left_panel.open_community(community.name)
             community_screen.left_panel.select_channel(CHANNEL_NAME)
             messages_screen = MessagesScreen()
@@ -103,8 +104,8 @@ def test_community_thread_desktop_flow(multiple_instances):
             wait_until_reply_not_in_main_chat(messages_screen.chat, reply_message)
             main_screen.minimize()
 
-        with step(f'{user_one.name} edits the reply inside the thread panel'):
-            switch_to_aut(aut_one, main_screen)
+        with step(f'{user_two.name} edits the reply inside the thread panel'):
+            switch_to_aut(aut_two, main_screen)
             community_screen = main_screen.left_panel.open_community(community.name)
             community_screen.left_panel.select_channel(CHANNEL_NAME)
             messages_screen = MessagesScreen()
@@ -118,7 +119,7 @@ def test_community_thread_desktop_flow(multiple_instances):
             main_screen.minimize()
 
         with step('Thread card, side panel, list row, and main-panel navigation'):
-            switch_to_aut(aut_one, main_screen)
+            switch_to_aut(aut_two, main_screen)
             community_screen = main_screen.left_panel.open_community(community.name)
             community_screen.left_panel.select_channel(CHANNEL_NAME)
             messages_screen = MessagesScreen()
@@ -139,8 +140,8 @@ def test_community_thread_desktop_flow(multiple_instances):
             )
             main_screen.minimize()
 
-        with step(f'{user_two.name} sees the thread badge without channel unread growth'):
-            switch_to_aut(aut_two, main_screen)
+        with step(f'{user_one.name} sees the thread badge without channel unread growth'):
+            switch_to_aut(aut_one, main_screen)
             community_screen = main_screen.left_panel.open_community(community.name)
             community_screen.left_panel.select_channel(CHANNEL_NAME)
             messages_screen = MessagesScreen()
