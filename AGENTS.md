@@ -17,22 +17,27 @@ Read `docs/architecture.md` and `guidelines/QML_ARCHITECTURE_GUIDE.md` before ch
 
 ## Build and test
 
-Setup is in `BUILDING.md` (desktop) and `mobile/DEV_SETUP.md` (mobile). Do not re-derive it; link to it.
+Setup is in `BUILDING.md` (desktop) and `mobile/README.md` / `mobile/DEV_SETUP.md` (mobile). Do not re-derive it; link to it. After dependencies are installed: `make update` then `make run`.
 
-| Task | Command |
-| --- | --- |
-| Desktop build | `make` (`make nim_status_client`) |
-| Run desktop | `make run` |
-| Mobile build / run | `make mobile-build` / `make mobile-run` (platform follows the Qt kit on `PATH`; see `mobile/DEV_SETUP.md`) |
-| QML lint | `make qml-lint` (desktop), `make qml-lint-mobile` |
-| StatusQ unit tests | `make run-statusq-tests` |
-| Storybook QML tests | `make run-storybook-tests`; one test: `make storybook-build` then `ctest --test-dir storybook/build/Qt<version> -R <TestName>` (tests in `storybook/qmlTests/tests/`) |
-| Nim tests | `make tests-nim` (`test/nim/`) |
-| Desktop e2e (Squish) | `test/e2e/`, see its README; needs a Squish licence |
-| Mobile e2e (Appium) | `test/e2e_appium/`, see its `AGENTS.md`; BrowserStack or local Appium |
-| status-go functional tests | in the `status-go` repo, `tests-functional/` (not from the submodule) |
+| Area | Run | Run one test |
+| --- | --- | --- |
+| Nim host tests (`test/nim/`) | `make tests-nim` | `make nim-test-run/test/nim/<test_file>.nim` |
+| StatusQ C++ tests | `make run-statusq-tests` | `make run-statusq-tests ARGS="-R <CTestName>"` |
+| Storybook QML tests (`storybook/qmlTests/tests/`) | `make run-storybook-tests` | Run the built `QmlTests` executable with `<TestCase>::<test_function>`, or pick the test in Qt Creator |
+| QML lint | `make qml-lint` (desktop), `make qml-lint-mobile` | whole `ui/` tree only |
+| Desktop e2e (Squish, `test/e2e/`) | from `test/e2e` with its venv: `pytest -m critical` | `pytest tests/<path>::<test> -v` |
+| Mobile e2e (Appium, `test/e2e_appium/`) | see `test/e2e_appium/AGENTS.md` | `python -m pytest tests/<path> -v --env=local` |
+| Mobile build / run | `make mobile-build` / `make mobile-run` (platform follows the Qt kit on `PATH`) | — |
+| status-go functional tests | in the `status-go` repo, `tests-functional/` (not from the submodule) | — |
 
-Run the narrowest check that covers the change before claiming it works. A QML-only change needs `qml-lint` and the relevant storybook test, not a full desktop build.
+`_bench.nim` files are benchmarks, not tests. Run the narrowest check that covers the change before claiming it works: a QML-only change needs `qml-lint` and the relevant storybook test, not a full desktop build.
+
+## Conventions that CI or reviewers enforce
+
+- Nim modules follow view / interface / module / controller; interfaces connect view and controller, controllers call services (`docs/architecture.md`).
+- QML: backend access goes through domain stores; model and data transformations live in adaptors, not views or stores; popups go through the app-level popup handlers (`guidelines/QML_ARCHITECTURE_GUIDE.md`). `ui/StatusQ` is the reusable component library; `AppLayouts` must not become a StatusQ dependency.
+- All user-visible QML text is wrapped in `qsTr("...")` (`qsTr("%n item(s)", "", count)` for plurals). After adding or changing strings, run `make update-translations` and commit `ui/i18n/qml_base.ts` and `ui/i18n/qml_en.ts`; CI enforces this (`I18N.md`).
+- New QML unit tests go in `storybook/qmlTests/tests/` (run without the backend, using stubs); StatusQ-specific tests may live under `ui/StatusQ/tests`.
 
 ## Branches, commits, PRs
 
@@ -46,7 +51,7 @@ Run the narrowest check that covers the change before claiming it works. A QML-o
 ## Testing and traceability
 
 - Appium tests under `test/e2e_appium/` that implement a specification scenario carry `@pytest.mark.spec("SC-XXX-NN")`. Keep existing markers when editing a test; do not invent IDs (specs live in `status-docs`).
-- Appium framework rules (page objects, locators, no `time.sleep`): `.cursor/rules/appium-framework-standards.mdc` and `test/e2e_appium/AGENTS.md`.
+- Appium framework rules (page objects, locators, no `time.sleep`, `ruff`): `test/e2e_appium/AGENTS.md`.
 
 ## Do not
 
@@ -58,6 +63,5 @@ Run the narrowest check that covers the change before claiming it works. A QML-o
 ## Where the rest lives
 
 - Qt and QML review skills: `.github/skills/` (qt-qml, qt-qml-review, qt-cpp-review, qt-ui-design).
-- Editor rules: `.cursor/rules/`.
 - Architecture decisions: `docs/adr/`. Quality attributes: `docs/FURPS/`.
-- Copilot-specific notes: `.github/copilot-instructions.md`.
+- Copilot's copy of these rules: `.github/copilot-instructions.md` (keep in agreement with this file).
