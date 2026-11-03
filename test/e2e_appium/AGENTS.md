@@ -9,6 +9,15 @@ Instructions for agents working on the mobile E2E Appium framework. Working here
 - Always activate it before running anything: `source test/e2e_appium/.venv/bin/activate`
 - All commands below assume the venv is active.
 
+### Framework rules
+
+- Page Object Model: all UI interaction goes through page objects in `pages/`; never call the driver directly from a test.
+- Locators live in `locators/`, built with the `BaseLocators` helpers. The QML source under `ui/` is the ground truth; the Android accessibility tree is a lossy projection, so check `visible:` and `enabled:` bindings before writing a locator.
+- Tests live in `tests/`, use the `StepMixin` base class, and are async (`async with self.step()`); fixtures in `fixtures/` and `tests/*/conftest.py`.
+- Page-object methods return `bool` and never raise on a UI failure; use `self.safe_click()`, `self.qt_safe_input()`, `self.is_element_visible()`, `self.wait_for_condition()`; log with `self.logger.error()` before returning `False`.
+- Never use `time.sleep()` or implicit waits.
+- Tests that implement a spec scenario carry `@pytest.mark.spec("SC-XXX-NN")`; keep existing markers, never invent IDs.
+
 ### Running tests
 
 Tests must be run from inside `test/e2e_appium/` (the `pytest.ini` sets `pythonpath = .`).
@@ -40,7 +49,7 @@ python -m pytest -m onboarding --env=browserstack -v
 
 ### Linting
 
-All Python code must pass `ruff check .` before committing (`.cursor/rules/appium-framework-standards.mdc`); install it with `pip install ruff`; config is in `pyproject.toml`.
+All Python code must pass `ruff check .` before committing; install it with `pip install ruff`; config is in `pyproject.toml`.
 
 ```bash
 cd test/e2e_appium
