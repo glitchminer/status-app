@@ -44,8 +44,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Pilot only: the full transcript lands in the (public) run log, to see denied tool calls.
-          show_full_output: true
           claude_args: >-
             --model ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
             --effort ${{ vars.AI_REVIEW_EFFORT || 'medium' }}
