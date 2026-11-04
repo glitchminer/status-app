@@ -36,6 +36,15 @@ jobs:
           fetch-depth: 1
           submodules: false
 
+      # The scrub runs tool subprocesses in a bubblewrap sandbox that needs socat. The action
+      # installs these only when allowed_non_write_users is set, so install them here.
+      - name: Install the subprocess sandbox
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends bubblewrap socat
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - id: review
         uses: anthropics/claude-code-action@v1
         env:
