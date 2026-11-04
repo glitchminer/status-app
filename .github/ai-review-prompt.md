@@ -5,7 +5,7 @@ Report at most 8 findings, ordered by severity. For each: `file:line`, what is w
 Severity, one per finding:
 - **Blocker**: wrong behaviour users or CI will hit, data loss, a security gap, or a test that cannot pass.
 - **Should fix**: a real defect in a less common path, or a missing check that hides one.
-- **Minor**: everything else worth saying (conventions, small clarity issues). Never posted inline.
+- **Minor**: everything else worth saying (conventions, small clarity issues). Never posted inline. A finding with a concrete input that gives a wrong result is never Minor, however rare the input: Minor findings are folded away and devs may not open them.
 
 Write in plain, short English: many readers use English as a second language. No praise, no restating the diff.
 
