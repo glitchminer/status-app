@@ -1,6 +1,6 @@
 # AGENTS.md — status-app
 
-Instructions for AI coding agents working in this repository. `CLAUDE.md` imports this file and `.github/copilot-instructions.md` points to it, so every tool reads the same rules. Nested `AGENTS.md` files (for example `test/e2e_appium/AGENTS.md`) override this one for their directory.
+Instructions for AI coding agents working in this repository. `CLAUDE.md` imports this file. `.github/copilot-instructions.md` holds the same rules for Copilot; keep the two in agreement. A nested `AGENTS.md` overrides this one for its directory.
 
 ## What this repo is
 
@@ -21,12 +21,12 @@ Setup is in `BUILDING.md` (desktop) and `mobile/README.md` / `mobile/DEV_SETUP.m
 
 | Area | Run | Run one test |
 | --- | --- | --- |
-| Nim host tests (`test/nim/`) | `make tests-nim` | `make nim-test-run/test/nim/<test_file>.nim` |
+| Nim host tests (`test/nim/`) | `make tests-nim` | `make nim-test-run/test/nim/<test_file>.nim` (targets in `makefiles/nim-tests.mk`) |
 | StatusQ C++ tests | `make run-statusq-tests` | `make run-statusq-tests ARGS="-R <CTestName>"` |
 | Storybook QML tests (`storybook/qmlTests/tests/`) | `make run-storybook-tests` | Run the built `QmlTests` executable with `<TestCase>::<test_function>`, or pick the test in Qt Creator |
 | QML lint | `make qml-lint` (desktop), `make qml-lint-mobile` | whole `ui/` tree only |
-| Desktop e2e (Squish, `test/e2e/`) | from `test/e2e` with its venv: `pytest -m critical` | `pytest tests/<path>::<test> -v` |
-| Mobile e2e (Appium, `test/e2e_appium/`) | see `test/e2e_appium/AGENTS.md` | `python -m pytest tests/<path> -v --env=local` |
+| Desktop e2e (Squish, `test/e2e/`) | see `test/e2e/README.md` | `pytest tests/<path>::<test> -v` from `test/e2e` |
+| Mobile e2e (Appium, `test/e2e_appium/`) | see `test/e2e_appium/README.md` | `python -m pytest tests/<path> -v --env=local` |
 | Mobile build / run | `make mobile-build` / `make mobile-run` (platform follows the Qt kit on `PATH`) | — |
 | status-go functional tests | in the `status-go` repo, `tests-functional/` (not from the submodule) | — |
 
@@ -36,22 +36,16 @@ Setup is in `BUILDING.md` (desktop) and `mobile/README.md` / `mobile/DEV_SETUP.m
 
 - Nim modules follow view / interface / module / controller; interfaces connect view and controller, controllers call services (`docs/architecture.md`).
 - QML: backend access goes through domain stores; model and data transformations live in adaptors, not views or stores; popups go through the app-level popup handlers (`guidelines/QML_ARCHITECTURE_GUIDE.md`). `ui/StatusQ` is the reusable component library; `AppLayouts` must not become a StatusQ dependency.
-- All user-visible QML text is wrapped in `qsTr("...")` (`qsTr("%n item(s)", "", count)` for plurals). After adding or changing strings, run `make update-translations` and commit `ui/i18n/qml_base.ts` and `ui/i18n/qml_en.ts`; CI enforces this (`I18N.md`).
+- All user-visible QML text is wrapped in `qsTr("...")` (`qsTr("%n item(s)", "", count)` for plurals). After adding or changing strings, run `make update-translations` and commit the updated files under `ui/i18n/`; CI enforces this (`I18N.md`).
 - New QML unit tests go in `storybook/qmlTests/tests/` (run without the backend, using stubs); StatusQ-specific tests may live under `ui/StatusQ/tests`.
+- `vendor/status-go` must point at a commit on a status-go `develop`-derived branch; CI (`pr.yml`) checks this.
 
 ## Branches, commits, PRs
 
 - Branch from the latest `master` of `status-im/status-app` (desktop and mobile are one repo). Release branches are `release/**`.
 - Conventional Commits: `<type>(scope): <description>`. Example: `fix(wallet): handle empty token list on startup`.
-- If an AI tool helped, add one trailer: `Assisted-by: <tool>`. Never `Co-authored-by:` for a tool. The human stays sole author; do not change author or committer identity.
-- Commit signing is recommended practice in the org. If you cannot sign, leave the commit to the human.
+- The human stays the author: do not change author or committer identity, and do not add `Co-authored-by:` for a tool. If an AI tool wrote part of a commit, add one trailer: `Assisted-by: <tool>`.
 - PRs use `.github/pull_request_template.md`: what, affected areas, how to test, impact. One concern per PR; keep it readable by a human reviewer.
-- `vendor/status-go` must point at a commit on a status-go `develop`-derived branch; CI (`pr.yml`) checks this.
-
-## Testing and traceability
-
-- Appium tests under `test/e2e_appium/` that implement a specification scenario carry `@pytest.mark.spec("SC-XXX-NN")`. Keep existing markers when editing a test; do not invent IDs (specs live in `status-docs`).
-- Appium framework rules (page objects, locators, no `time.sleep`, `ruff`): `test/e2e_appium/AGENTS.md`.
 
 ## Do not
 
@@ -62,6 +56,6 @@ Setup is in `BUILDING.md` (desktop) and `mobile/README.md` / `mobile/DEV_SETUP.m
 
 ## Where the rest lives
 
-- Qt and QML review skills: `.github/skills/` (qt-qml, qt-qml-review, qt-cpp-review, qt-ui-design).
+- Qt and QML skills: `.github/skills/` and `.claude/skills/`.
 - Architecture decisions: `docs/adr/`. Quality attributes: `docs/FURPS/`.
-- Copilot's copy of these rules: `.github/copilot-instructions.md` (keep in agreement with this file).
+- Copilot's copy of these rules: `.github/copilot-instructions.md`.
