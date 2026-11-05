@@ -39,7 +39,7 @@ jobs:
       # Pilot trade-off: this checks out the PR merge commit, so AGENTS.md and the
       # review checklist are read from the PR itself and a PR author can change them.
       # The upstream variant (.github/ai-review.upstream.yml) reads them from the base.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
           submodules: false
@@ -54,7 +54,7 @@ jobs:
           fi
 
       - id: review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c # v1
         env:
           # Best-effort scrub of secrets from the tools' subprocess environments.
           CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
