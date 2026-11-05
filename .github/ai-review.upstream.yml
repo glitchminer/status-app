@@ -113,7 +113,7 @@ jobs:
                   + (if .inline then " _(inline comment)_" else "<br>\(.detail)" end)), "" else empty end),
               (if ($minor | length) > 0 then "<details><summary>Minor (\($minor | length))</summary>", "",
                 ($minor[] | "- `\(.location)` \(.title) \(.detail)"), "", "</details>", "" else empty end),
-              (if (.tests | length) > 0 then "### Tests to add", (.tests[] | "- \(.)"), "" else empty end),
+              (if (.tests | length) > 0 then "### Tests for this PR", (.tests[] | "- \(.)"), "" else empty end),
               "---",
               "<sub>AI review by \($model). It runs when a PR is opened or marked ready for review; add the `ai-review` label to run it again. Rate each comment with 👍 or 👎. Add the `no-ai-review` label to skip a PR.</sub>"
           ' <<<"$OUT" > "$RUNNER_TEMP/summary.md"
