@@ -61,10 +61,14 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Bots whose PRs get a review, comma-separated (e.g. devin-ai-integration). Empty: humans only.
+          allowed_bots: ${{ vars.AI_REVIEW_ALLOWED_BOTS }}
+          # The full log can quote PR content, so only on a private repository.
+          show_full_output: ${{ github.event.repository.private }}
           claude_args: >-
             --model ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
             --effort ${{ vars.AI_REVIEW_EFFORT || 'medium' }}
-            --max-turns 25
+            --max-turns 40
             --json-schema '{"type":"object","properties":{"verdict":{"type":"string"},"findings":{"type":"array","items":{"type":"object","properties":{"severity":{"type":"string","enum":["Blocker","Should fix","Minor"]},"location":{"type":"string"},"title":{"type":"string"},"detail":{"type":"string"},"inline":{"type":"boolean"}},"required":["severity","location","title","detail","inline"]}},"tests":{"type":"array","items":{"type":"string"}}},"required":["verdict","findings","tests"]}'
             --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob"
           prompt: |
@@ -82,16 +86,23 @@ jobs:
       # The model only returns structured output; this step renders and posts the summary,
       # so no comment command is in the model's hands. One comment per PR: the oldest
       # marked comment from this bot is edited by ID, otherwise one is created. The output
-      # arrives through env, never interpolated into the script.
+      # arrives through env, never interpolated into the script. When the review fails, the
+      # same comment says so, so the dev is not left waiting for a review that never comes.
       - name: Post the summary
+        if: ${{ !cancelled() && steps.review.outcome != 'skipped' }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
           OUT: ${{ steps.review.outputs.structured_output }}
           MODEL: ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          [ -n "$OUT" ] || { echo "::error::AI review returned no output"; exit 1; }
+          if [ -z "$OUT" ]; then
+            printf '%s\n' "<!-- ai-review -->" "## AI review" "" \
+              "**The review could not finish on this PR. Add the \`ai-review\` label to try again.**" "" "---" \
+              "<sub>AI review by $MODEL. [Run log]($RUN_URL)</sub>" > "$RUNNER_TEMP/summary.md"
+          else
           jq -r --arg model "$MODEL" '
             def rank: if .severity == "Blocker" then 0 else 1 end;
             ([.findings[] | select(.severity != "Minor")] | sort_by(rank)) as $main
@@ -106,6 +117,7 @@ jobs:
               "---",
               "<sub>AI review by \($model). It runs when a PR is opened or marked ready for review; add the `ai-review` label to run it again. Rate each comment with 👍 or 👎. Add the `no-ai-review` label to skip a PR.</sub>"
           ' <<<"$OUT" > "$RUNNER_TEMP/summary.md"
+          fi
           keep=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-review -->"))) | .id' | head -1)
           if [ -n "$keep" ]; then
@@ -113,6 +125,20 @@ jobs:
           else
             gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@"$RUNNER_TEMP/summary.md" > /dev/null
           fi
+          [ -n "$OUT" ] || { echo "::error::AI review returned no output"; exit 1; }
+
+      # One line per run in the job summary (not on the PR): cost, turns and PR size, for the trial's tally.
+      - name: Record the cost
+        if: ${{ !cancelled() && steps.review.outcome != 'skipped' }}
+        env:
+          EXEC: ${{ steps.review.outputs.execution_file }}
+          MODEL: ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
+          SIZE: "+${{ github.event.pull_request.additions }}/-${{ github.event.pull_request.deletions }}"
+        run: |
+          [ -s "$EXEC" ] || { echo "ai-review cost: unknown (no execution file)" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          jq -r --arg m "$MODEL" --arg s "$SIZE" \
+            '[.[] | select(.type == "result")] | last | "ai-review cost: $\(.total_cost_usd * 100 | round / 100) turns: \(.num_turns) result: \(.subtype) model: \($m) size: \($s)"' \
+            "$EXEC" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Removing the label lets a dev add it again to ask for another review.
       - name: Clear the re-run label
