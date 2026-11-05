@@ -18,8 +18,10 @@ jobs:
   review:
     # Same-repository PRs only: fork PRs get no secrets and a read-only token on
     # `pull_request`, and the action rejects actors without write access.
+    # Off switch for the whole repository: the job runs only while AI_REVIEW_ENABLED is 'true'.
     if: >-
-      github.event.pull_request.draft == false
+      vars.AI_REVIEW_ENABLED == 'true'
+      && github.event.pull_request.draft == false
       && github.event.pull_request.head.repo.full_name == github.repository
       && !contains(github.event.pull_request.labels.*.name, 'no-ai-review')
       && (github.event.action != 'labeled' || github.event.label.name == 'ai-review')
@@ -42,6 +44,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 1
+          # No token left on disk: the model's Read tool must have nothing to find.
+          persist-credentials: false
           submodules: false
 
       # The scrub runs tool subprocesses in a bubblewrap sandbox that needs socat. The action
@@ -66,11 +70,12 @@ jobs:
           # The full log can quote PR content, so only on a private repository.
           show_full_output: ${{ github.event.repository.private }}
           claude_args: >-
-            --model ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
+            --model ${{ vars.AI_REVIEW_MODEL || 'claude-opus-5-5' }}
             --effort ${{ vars.AI_REVIEW_EFFORT || 'medium' }}
             --max-turns 40
             --json-schema '{"type":"object","properties":{"verdict":{"type":"string"},"findings":{"type":"array","items":{"type":"object","properties":{"severity":{"type":"string","enum":["Blocker","Should fix","Minor"]},"location":{"type":"string"},"title":{"type":"string"},"detail":{"type":"string"},"inline":{"type":"boolean"}},"required":["severity","location","title","detail","inline"]}},"tests":{"type":"array","items":{"type":"string"}}},"required":["verdict","findings","tests"]}'
-            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob"
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),mcp__github_inline_comment__create_inline_comment,Read(./**),Grep,Glob"
+            --disallowedTools "Read(//proc/**),Read(//etc/**),Read(//tmp/**),Read(//root/**),Read(//home/runner/work/_temp/**),Read(//home/runner/.claude/**),Read(//home/runner/.config/**),Read(//home/runner/.ssh/**),Write,Edit,NotebookEdit,WebFetch,WebSearch"
           prompt: |
             Review pull request #${{ github.event.pull_request.number }} in ${{ github.repository }}.
             The repository's default branch is `${{ github.event.repository.default_branch }}`.
@@ -96,28 +101,39 @@ jobs:
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
           OUT: ${{ steps.review.outputs.structured_output }}
-          MODEL: ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
+          MODEL: ${{ vars.AI_REVIEW_MODEL || 'claude-opus-5-5' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ASSOC: ${{ github.event.pull_request.author_association }}
         run: |
           if [ -z "$OUT" ]; then
+            # No note on PRs from authors without write access: it would invite a maintainer to
+            # label, and so run the model on, content nobody trusted.
+            case "$ASSOC" in OWNER|MEMBER|COLLABORATOR) ;; *) echo "::error::no review output; author is $ASSOC, nothing posted"; exit 1 ;; esac
             printf '%s\n' "<!-- ai-review -->" "## AI review" "" \
               "**The review could not finish on this PR. Add the \`ai-review\` label to try again.**" "" "---" \
               "<sub>AI review by $MODEL. [Run log]($RUN_URL)</sub>" > "$RUNNER_TEMP/summary.md"
           else
           jq -r --arg model "$MODEL" '
+            def clean(n): tostring | .[0:n] | gsub("<"; "&lt;") | gsub(">"; "&gt;") | gsub("@"; "@\u200b")
+              | gsub("://"; ":/\u200b/") | gsub("\\]\\("; "]\u200b(");
             def rank: if .severity == "Blocker" then 0 else 1 end;
             ([.findings[] | select(.severity != "Minor")] | sort_by(rank)) as $main
             | [.findings[] | select(.severity == "Minor")] as $minor
-            | "<!-- ai-review -->", "## AI review", "", "**\(.verdict)**", "",
+            | "<!-- ai-review -->", "## AI review", "", "**\(.verdict | clean(400))**", "",
               (if ($main | length) > 0 then "### Findings",
-                ($main[] | "- **\(.severity):** `\(.location)` \(.title)"
-                  + (if .inline then " _(inline comment)_" else "<br>\(.detail)" end)), "" else empty end),
+                ($main[] | "- **\(.severity):** `\(.location | clean(200) | gsub("`"; ""))` \(.title | clean(200))"
+                  + (if .inline then " _(inline comment)_" else "<br>\(.detail | clean(800))" end)), "" else empty end),
               (if ($minor | length) > 0 then "<details><summary>Minor (\($minor | length))</summary>", "",
-                ($minor[] | "- `\(.location)` \(.title) \(.detail)"), "", "</details>", "" else empty end),
-              (if (.tests | length) > 0 then "### Tests for this PR", (.tests[] | "- \(.)"), "" else empty end),
+                ($minor[] | "- `\(.location | clean(200) | gsub("`"; ""))` \(.title | clean(200)) \(.detail | clean(800))"), "", "</details>", "" else empty end),
+              (if (.tests | length) > 0 then "### Tests for this PR", (.tests[:3][] | "- \(clean(300))"), "" else empty end),
               "---",
               "<sub>AI review by \($model). It runs when a PR is opened or marked ready for review; add the `ai-review` label to run it again. Rate each comment with 👍 or 👎. Add the `no-ai-review` label to skip a PR.</sub>"
           ' <<<"$OUT" > "$RUNNER_TEMP/summary.md"
+          fi
+          # Backstop: never post text that looks like a credential, whatever the model returned.
+          if grep -qE 'gh[pousr]_[A-Za-z0-9]{20}|github_pat_|sk-ant-|x-access-token|AUTHORIZATION|eC1hY2Nlc3MtdG9rZW4' "$RUNNER_TEMP/summary.md"; then
+            printf '%s\n' "<!-- ai-review -->" "## AI review" "" "**The review was withheld: its output looked like it contained a credential. A maintainer should read the run log.**" > "$RUNNER_TEMP/summary.md"
+            OUT=""
           fi
           keep=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-review -->"))) | .id' | head -1)
@@ -133,7 +149,7 @@ jobs:
         if: ${{ !cancelled() && steps.review.outcome != 'skipped' }}
         env:
           EXEC: ${{ steps.review.outputs.execution_file }}
-          MODEL: ${{ vars.AI_REVIEW_MODEL || 'claude-sonnet-5-5' }}
+          MODEL: ${{ vars.AI_REVIEW_MODEL || 'claude-opus-5-5' }}
           SIZE: "+${{ github.event.pull_request.additions }}/-${{ github.event.pull_request.deletions }}"
         run: |
           [ -s "$EXEC" ] || { echo "ai-review cost: unknown (no execution file)" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
