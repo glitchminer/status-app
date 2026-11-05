@@ -19,8 +19,9 @@ Before writing anything, for each changed function or QML component list the inp
 6. **Tests.** Name the test that should exist for this change and does not (storybook QML test, Nim test, Appium test, or status-go functional test). If tests were added, say whether they would fail without the change. For Appium changes, check page-object rules: no direct driver calls in tests, no `time.sleep`.
 7. **PR hygiene.** Suggest a split only when the diff is over 400 changed lines and mixes unrelated concerns. Do not report empty template sections.
 8. If nothing of substance is wrong, return no findings and say so in the verdict.
+9. If `.github/ai-review-local.md` exists, apply its rules after these.
 
 Output:
 - Return the review as structured output: `verdict` (one sentence a dev can act on, e.g. "Not ready: the send-modal network check can never pass."), `findings`, and `tests` (tests to add, one short line each).
-- Each finding: `severity`, `location` (`path:line`), `title` (one sentence, at most 20 words), and `detail` (scenario and fix, at most 60 words).
+- Each finding: `severity`, `location` (`path:line`, where line is the line number in the PR's version of the file: count it from the hunk header `@@ -a,b +c,d @@`, starting at `c`; never the line's position in the `gh pr diff` output; for a whole-commit finding, `commit <subject>`), `title` (one sentence, at most 20 words), and `detail` (scenario and fix, at most 60 words).
 - For each Blocker or Should fix on a changed line, also post one inline comment: first line `**<severity>:** <title>`, then the detail. At most 60 words. Set `inline` to true for those findings.
