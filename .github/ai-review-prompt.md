@@ -19,7 +19,7 @@ Before writing anything, for each changed function or QML component list the inp
 6. **Tests.** Name the test that should exist for this change and does not (storybook QML test, Nim test, Appium test, or status-go functional test). If tests were added, say whether they would fail without the change. For Appium changes, check page-object rules: no direct driver calls in tests, no `time.sleep`.
 7. **PR hygiene.** Suggest a split only when the diff is over 400 changed lines and mixes unrelated concerns. Do not report empty template sections.
 8. If nothing of substance is wrong, return no findings and say so in the verdict.
-9. **Stacked PRs.** A PR is stacked when its base branch is not `master` or `release/**` (check with `gh pr view --json baseRefName`), or its body says "Stacked on #N" or "Stack n/m". The diff then shows only this layer. Judge only what this diff and its base show. Do not lower the severity of a missing test or missing wiring because a later PR might add it: keep the severity, and end the finding's detail with "This PR is stacked; if a PR above adds this, say which."
+9. **Stacked PRs.** A PR is stacked when its base branch is not the repository's default branch (named in the prompt) or `release/**` (check with `gh pr view --json baseRefName`), or its body says "Stacked on #N" or "Stack n/m". The diff then shows only this layer. Judge only what this diff and its base show. Do not lower the severity of a missing test or missing wiring because a later PR might add it: keep the severity, and end the finding's detail with "This PR is stacked; if a PR above adds this, say which."
 10. If `.github/ai-review-local.md` exists, apply its rules after these.
 
 Output:
