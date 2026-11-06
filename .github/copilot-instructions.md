@@ -1,5 +1,7 @@
 # Project Guidelines
 
+Canonical cross-tool agent instructions are in [`AGENTS.md`](../AGENTS.md); keep the two in agreement.
+
 ## Architecture
 
 - This repository is the Status app codebase for desktop and mobile. The frontend is primarily Qt/QML (`ui/`), with Nim middleware (`src/`) coordinating UI-facing modules and services.
